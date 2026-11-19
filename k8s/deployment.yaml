@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: punitxd-flask-hello-world
+  namespace: kairo-punitxd-flask-hello-world
+  labels:
+    app: punitxd-flask-hello-world
+    app.kubernetes.io/managed-by: kairo
+spec:
+  replicas: 1
+  # rollback needs old ReplicaSets to still be around
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: punitxd-flask-hello-world
+  template:
+    metadata:
+      labels:
+        app: punitxd-flask-hello-world
+        app.kubernetes.io/managed-by: kairo
+    spec:
+      containers:
+        - name: punitxd-flask-hello-world
+          image: kairo/punitxd-flask-hello-world:facfc73c44b35d00bb1f72e8986f0ea47cab0755
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PORT
+              value: "8000"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          # liveness + memory limit are what make self-healing possible.
+          # don't remove them without talking to BE 2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
